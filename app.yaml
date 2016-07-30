@@ -33,3 +33,7 @@ handlers:
 #libraries:
 #- name: jinja2
 #  version: latest
+builtins:
+- deferred: on
+- remote_api: on
+

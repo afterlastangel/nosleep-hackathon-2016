@@ -2,8 +2,10 @@ import logging
 import uuid
 from werkzeug import secure_filename
 import cloudstorage as gcs
+from search_api import (
+    process_upload_dictionary, process_delete_index, query_index)
 
-
+import random
 from generator import generate
 from image_processing import ImageProccessing
 from flask import Flask, request, jsonify
@@ -36,9 +38,14 @@ def get_meta_from_image_url(image_url):
     ip_result = ip.execute()
     result = {}
     keywords = ip_result['keywords']
-    from random import randint
-
-    result['message'] = '\n'.join(generate(keywords, None, randint(2,4)))
+    print keywords
+    messages = query_index(
+        'shakespeare', random.sample(keywords, 3))
+    if len(messages) > 0:
+        message = random.choice(messages)
+    else:
+        message = random.choice(generate(keywords, None, random.randint(2,4)))
+    result['message'] = message
     result['feeling'] = ''
     result['place'] = ''
     result['keywords'] = keywords
@@ -63,6 +70,32 @@ def get_list_posted_image():
                 'feeling': image.feeling,
             }]
     return jsonify(results)
+
+
+@app.route('/v1/dictionary', methods=['POST'])
+def upload_dictionary():
+    index_name = request.args.get('index_name')
+    if request.method == 'POST':
+        file = request.files['file']
+        process_upload_dictionary(index_name, file)
+    return jsonify({'success': True})
+
+
+@app.route('/v1/search', methods=['GET'])
+def search():
+    query = request.args.get('query')
+    index_name = request.args.get('index_name')
+    if request.method == 'GET':
+        keywords = query.split(' ')
+        results = query_index(index_name, keywords)
+    return jsonify(results)
+
+@app.route('/v1/dictionary', methods=['DELETE'])
+def delete_dictionary():
+    index_name = request.args.get('index_name')
+    if request.method == 'DELETE':
+        process_delete_index(index_name)
+    return jsonify({'success': True})
 
 
 @app.route('/v1/cognitive/image', methods=['POST'])
