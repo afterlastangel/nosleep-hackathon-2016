@@ -6,6 +6,6 @@ then
 fi
 . $VIRTUALENV_FOLDER/bin/activate
 pip install -r requirements.dev.txt
-pip install -r requirements.gae.txt
+pip install -r requirements.txt -t lib
 pip install -r requirements.txt
 
