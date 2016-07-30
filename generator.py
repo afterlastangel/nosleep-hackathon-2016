@@ -38,6 +38,15 @@ word_lists_city[9] = ["o", "oh", "ooh", "ah", "lord", "god", "damn"]
 # tokens
 TO_BE_REPLACED = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 
+# filters
+NEGATIVE_WORDS = [
+    'death', 'desolation', 'endurance', 'fall', 'endure', 'die', 'cold', 'stormy', 'rough', 'dead', 'roughly', 'command', 'gab',
+    'noise', 'anger', 'exhaustion', 'shove', 'desire', 'hustle', 'run', 'shrink', 'dark', 'dusty', 'grimy', 'noisy', 'damn'
+]
+POSITIVE_WORDS = [
+    'courage', 'life', 'love', 'faith', 'lead', 'desire', 'rise', 'warm', 'clear', 'lively', 'calmly', 'quietly',
+    'god'
+]
 
 # sentence patterns
 sentence_patterns = [
@@ -57,6 +66,23 @@ sentence_patterns = [
 ]
 
 
+def get_word_type(word):
+    if word in POSITIVE_WORDS:
+        return 1
+    if word in NEGATIVE_WORDS:
+        return -1
+    return 0
+
+
+def word_filter(word_list, fill_positive):
+    output = []
+    for word in word_list:
+        wtype = get_word_type(word)
+        if (wtype == 0) || (fill_positive and wtype == 1) or (!fill_positive and wtype == -1):
+            output.append(word)
+    return output
+
+
 def generate_word(idx, word_lists):
     i = randrange(len(word_lists[idx]))
     return word_lists[idx][i]
@@ -73,10 +99,16 @@ def generate_sentence(idx, word_lists):
     return ''.join(output)
 
 
-def generate(keywords, emotions, nlines):
+def generate(keywords, emotions, nlines, is_positive=True):
+    nlines = randrange(4, 6)
+    if randrange(0, 100) % 2 == 0:
+        is_positive = False
+
     output = []
     word_lists = copy.deepcopy(word_lists_sea)
     word_lists[1] = keywords
+    for i in range(len(word_lists)):
+        word_lists[i] = word_filter(word_lists[i], is_positive)
 
     for i in range(nlines):
         idx = randrange(len(sentence_patterns))
