@@ -33,18 +33,19 @@ def hello():
     return 'Hello World! from Nosleep!!!'
 
 
-def get_meta_from_image_url(image_url):
+def get_meta_from_image_url(image_url, is_positive):
     ip = ImageProccessing(image_url)
     ip_result = ip.execute()
     result = {}
     keywords = ip_result['keywords']
     print keywords
-    messages = query_index(
-        'shakespeare', random.sample(keywords, 3))
-    if len(messages) > 0:
-        message = random.choice(messages)
-    else:
-        message = random.choice(generate(keywords, None, random.randint(2,4)))
+    # messages = query_index(
+    #     'shakespeare', random.sample(keywords, 3))
+    # if len(messages) > 0:
+    #     message = random.choice(messages)
+    # else:
+    #     message = random.choice(generate(keywords, None, random.randint(4,6), is_positive))
+    message = random.choice(generate(keywords, None, random.randint(4,6), is_positive))
     result['message'] = message
     result['feeling'] = ''
     result['place'] = ''
@@ -102,6 +103,9 @@ def delete_dictionary():
 def upload():
     if request.method == 'POST':
         file = request.files['file']
+        data = request.form
+        is_positive = int(data.getlist('is_positive')[0])
+        is_english = int(data.getlist('is_english')[0])
         extension = secure_filename(file.filename).rsplit('.', 1)[1]
         options = {}
         options['retry_params'] = gcs.RetryParams(backoff_factor=1.1)
@@ -124,7 +128,7 @@ def upload():
                     facebook_user_id=facebook_user_id)
                 post_key = post.put()
 
-                result = get_meta_from_image_url(post.get_public_url())
+                result = get_meta_from_image_url(post.get_public_url(), is_positive)
                 message = result['message']
                 feeling = result['feeling']
                 place = result['place']

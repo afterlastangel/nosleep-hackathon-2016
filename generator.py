@@ -78,7 +78,7 @@ def word_filter(word_list, fill_positive):
     output = []
     for word in word_list:
         wtype = get_word_type(word)
-        if (wtype == 0) || (fill_positive and wtype == 1) or (!fill_positive and wtype == -1):
+        if (wtype == 0) or (fill_positive and wtype == 1) or (not fill_positive and wtype == -1):
             output.append(word)
     return output
 
@@ -100,10 +100,6 @@ def generate_sentence(idx, word_lists):
 
 
 def generate(keywords, emotions, nlines, is_positive=True):
-    nlines = randrange(4, 6)
-    if randrange(0, 100) % 2 == 0:
-        is_positive = False
-
     output = []
     word_lists = copy.deepcopy(word_lists_sea)
     word_lists[1] = keywords
