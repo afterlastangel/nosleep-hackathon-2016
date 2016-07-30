@@ -1,8 +1,11 @@
 import logging
+import uuid
 from werkzeug import secure_filename
 import cloudstorage as gcs
 
 
+from generator import generate
+from image_processing import ImageProccessing
 from flask import Flask, request, jsonify
 from google.appengine.ext import ndb
 
@@ -14,7 +17,9 @@ BUCKET_NAME = "nosleep-1469844138323.appspot.com"
 class PostModel(ndb.Model):
     filename = ndb.StringProperty()
     facebook_user_id = ndb.StringProperty()
+    message = ndb.StringProperty()
     meta = ndb.JsonProperty()
+    feeling = ndb.StringProperty()
 
     def get_public_url(self):
         return 'https://storage.googleapis.com/' + BUCKET_NAME + '/' + self.filename  # noqa
@@ -27,12 +32,37 @@ def hello():
 
 
 def get_meta_from_image_url(image_url):
+    ip = ImageProccessing(image_url)
+    ip_result = ip.execute()
     result = {}
-    result['message'] = 'this is demo config'
+    keywords = ip_result['keywords']
+    from random import randint
+
+    result['message'] = '\n'.join(generate(keywords, None, randint(2,4)))
     result['feeling'] = ''
     result['place'] = ''
-    result['keywords'] = ['']
+    result['keywords'] = keywords
     return result
+
+
+@app.route('/v1/images', methods=['GET'])
+def get_list_posted_image():
+    facebook_user_id = request.args.get('user_id')
+    facebook_token = request.args.get('token')
+    # TODO: Check valid facebok_user_id token
+    if facebook_user_id is None:
+        return jsonify([])
+    images = PostModel.query(
+        PostModel.facebook_user_id==facebook_user_id).fetch()
+    results = []
+    for image in images:
+        results += [
+            {
+                'image_url': image.get_public_url(),
+                'message': image.message,
+                'feeling': image.feeling,
+            }]
+    return jsonify(results)
 
 
 @app.route('/v1/cognitive/image', methods=['POST'])
@@ -45,6 +75,10 @@ def upload():
         options['content_type'] = 'image/' + extension
         bucket_name = BUCKET_NAME
         filename = file.filename
+        """
+        # image_id = uuid.uuid1()
+        # filename = str(image_id) + '.' + extension
+        """
         facebook_user_id = request.args.get('user_id')
         path = '/' + bucket_name + '/' + str(
             secure_filename(filename))
@@ -63,6 +97,7 @@ def upload():
                 place = result['place']
                 keywords = result['keywords']
                 post.meta = result
+                post.message = message
                 post.put()
                 return jsonify(
                     {"success": True,

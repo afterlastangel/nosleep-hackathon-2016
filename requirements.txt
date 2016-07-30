@@ -5,3 +5,5 @@ oauth2client==2.2.0
 six==1.10.0
 werkzeug
 GoogleAppEngineCloudStorageClient
+clarifai
+elasticsearch>=2.0.0
