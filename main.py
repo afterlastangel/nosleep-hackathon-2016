@@ -44,8 +44,8 @@ def get_meta_from_image_url(image_url, is_positive):
     # if len(messages) > 0:
     #     message = random.choice(messages)
     # else:
-    #     message = random.choice(generate(keywords, None, random.randint(4,6), is_positive))
-    message = '\n'.join(generate(keywords, None, random.randint(4,6), is_positive))
+    #     message = random.choice(generate(keywords, None, random.randint(2,5), is_positive))
+    message = '\n'.join(generate(keywords, None, random.randint(2,5), is_positive))
     result['message'] = message
     result['feeling'] = ''
     result['place'] = ''
