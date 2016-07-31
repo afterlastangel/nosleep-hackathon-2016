@@ -1,5 +1,10 @@
 import copy
 from random import randrange
+import requests
+import re
+from google.appengine.api import urlfetch
+import json
+import os
 
 # 1 = "Concrete Nouns"
 # 2 = "Abstract Nouns"
@@ -112,3 +117,39 @@ def generate(keywords, emotions, nlines, is_positive=True):
         output.append(sentence)
 
     return output
+
+
+def en_to_vi(word):
+    # import urllib3
+    # http = urllib3.PoolManager()
+    # x = http.request('GET', 'https://www.googleapis.com/language/translate/v2?key=AIzaSyAUYzZ4y9NCy6gV0nhtXeSq2R8eLjFr59o&q=hello&source=en&target=vi')
+
+    url = "https://www.googleapis.com/language/translate/v2?key=AIzaSyAUYzZ4y9NCy6gV0nhtXeSq2R8eLjFr59o&q=" + word + "&source=en&target=vi"
+    res = urlfetch.fetch(url=url)
+    result = json.loads(res.content)
+    return result['data']['translations'][0]['translatedText']
+
+
+def generate_vietnamese(keywords, is_positive=True):
+    # translate keywords to Vietnamese
+    keywords_vi = []
+    for word in keywords:
+        keywords_vi.append(en_to_vi(word))
+    print(keywords_vi)
+
+    # add emotional words
+    if is_positive:
+        keywords_vi.append(en_to_vi('happy'))
+    else:
+        keywords_vi.append(en_to_vi('sad'))
+
+    # get Vietnamese poem
+    r = requests.post("http://thomay.vn/index.php?q=tutaochude2",
+        data = {'tunhap_chude': ', '.join(keywords_vi)}
+    )
+    r.encoding = 'utf-8'
+    tmp = re.search(r'contain-1 pos-r ketquacuaban.*', r.text, re.M|re.I|re.U|re.DOTALL)
+    tmp2 = re.search(r'font color=Blue>.*</font>', tmp.group(), re.M|re.I|re.U|re.DOTALL)
+    tmp = tmp2.group().encode('utf-8')
+    tmp = tmp[16:-7]
+    return tmp.split('<br>')[:-1]

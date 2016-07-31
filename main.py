@@ -6,7 +6,7 @@ from search_api import (
     process_upload_dictionary, process_delete_index, query_index)
 
 import random
-from generator import generate
+from generator import generate, generate_vietnamese
 from image_processing import ImageProccessing
 from flask import Flask, request, jsonify
 from google.appengine.ext import ndb
@@ -33,7 +33,7 @@ def hello():
     return 'Hello World! from Nosleep!!!'
 
 
-def get_meta_from_image_url(image_url, is_positive):
+def get_meta_from_image_url(image_url, is_positive, is_english):
     ip = ImageProccessing(image_url)
     ip_result = ip.execute()
     result = {}
@@ -45,7 +45,11 @@ def get_meta_from_image_url(image_url, is_positive):
     #     message = random.choice(messages)
     # else:
     #     message = random.choice(generate(keywords, None, random.randint(2,5), is_positive))
-    message = '\n'.join(generate(keywords, None, random.randint(2,5), is_positive))
+    # message = '\n'.join(generate(keywords, None, random.randint(2,5), is_positive))
+    if is_english:
+        message = '\n'.join(generate(keywords, None, random.randint(2, 5), is_positive))
+    else:
+        message = '\n'.join(generate_vietnamese(keywords, is_positive))
     result['message'] = message
     result['feeling'] = ''
     result['place'] = ''
@@ -104,8 +108,12 @@ def upload():
     if request.method == 'POST':
         file = request.files['file']
         data = request.form
-        is_positive = int(data.getlist('is_positive')[0])
-        is_english = int(data.getlist('is_english')[0])
+        # print(data.getlist('is_positive'))
+        # print(data.getlist('is_english'))
+        is_positive = int(request.args.get('user_id'))
+        is_english = int(request.args.get('is_english'))
+        # is_positive = int(data.getlist('is_positive')[0])
+        # is_english = int(data.getlist('is_english')[0])
         extension = secure_filename(file.filename).rsplit('.', 1)[1]
         options = {}
         options['retry_params'] = gcs.RetryParams(backoff_factor=1.1)
@@ -128,7 +136,7 @@ def upload():
                     facebook_user_id=facebook_user_id)
                 post_key = post.put()
 
-                result = get_meta_from_image_url(post.get_public_url(), is_positive)
+                result = get_meta_from_image_url(post.get_public_url(), is_positive, is_english)
                 message = result['message']
                 feeling = result['feeling']
                 place = result['place']
